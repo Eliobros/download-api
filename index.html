@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Downloader API</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    label {
+      display: block;
+      margin-bottom: 1rem;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.3rem;
+      box-sizing: border-box;
+    }
+    button {
+      cursor: pointer;
+    }
+    pre {
+      background: #f4f4f4;
+      padding: 1rem;
+      overflow-x: auto;
+    }
+    .error {
+      color: red;
+      margin-top: 1rem;
+    }
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <h2>Downloader API</h2>
+
+  <form id="downloadForm">
+    <label>
+      Plataforma:
+      <select id="platform" required>
+        <option value="youtube">YouTube</option>
+        <option value="instagram">Instagram</option>
+        <option value="tiktok">TikTok</option>
+      </select>
+    </label>
+
+    <label>
+      URL:
+      <input type="url" id="url" placeholder="Cole a URL aqui" required />
+    </label>
+
+    <label>
+      Tipo:
+      <select id="type" required>
+        <option value="mp3">mp3</option>
+        <option value="mp4">mp4</option>
+        <option value="m4a">m4a</option>
+      </select>
+    </label>
+
+    <label>
+      X-Api-Key:
+      <input type="text" id="apiKey" placeholder="Sua chave API aqui" required />
+    </label>
+
+    <button type="submit" id="btnSubmit">Enviar</button>
+  </form>
+
+  <div id="result"></div>
+  <div id="error" class="error"></div>
+
+  <script>
+    const form = document.getElementById('downloadForm');
+    const resultDiv = document.getElementById('result');
+    const errorDiv = document.getElementById('error');
+    const btnSubmit = document.getElementById('btnSubmit');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorDiv.textContent = '';
+      resultDiv.textContent = '';
+
+      const platform = document.getElementById('platform').value;
+      let url = document.getElementById('url').value.trim();
+      const type = document.getElementById('type').value;
+      const apiKey = document.getElementById('apiKey').value.trim();
+
+      if (!apiKey) {
+        errorDiv.textContent = 'A chave API é obrigatória.';
+        return;
+      }
+
+      btnSubmit.disabled = true;
+      btnSubmit.textContent = 'Carregando...';
+
+      // Corrige URL para evitar ? duplicado
+      if (url.includes('?')) {
+        url = url.replace('?', '&');
+      }
+
+      const apiUrl = `http://93.127.129.84:3000/api/download/${platform}?url=${encodeURIComponent(url)}&type=${type}`;
+
+      try {
+        const response = await fetch(apiUrl, {
+          headers: {
+            'X-Api-Key': apiKey
+          }
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          throw new Error(errorData?.error || `Erro HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        resultDiv.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        errorDiv.textContent = 'Erro: ' + err.message;
+      } finally {
+        btnSubmit.disabled = false;
+        btnSubmit.textContent = 'Enviar';
+      }
+    });
+  </script>
+</body>
+</html>
